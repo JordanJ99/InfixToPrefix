@@ -110,6 +110,7 @@ class conversion
         //Assume it's being passed the reversed string
         Stack<operatorPrecedence> equation_stack = new Stack();
         String prefixString = "";
+        StringBuilder sb = new StringBuilder();
         for(int i=0;i<input.length();i++)
         {
             
@@ -121,11 +122,11 @@ class conversion
             if(Character.isDigit(op.ch) || Character.isLetter(op.ch))
             {
                 //Precedence is irrelevant
-                prefixString = prefixString + op.ch;
+                sb.append(op.ch);
             }
             else if(op.ch == ')'|| op.ch == '}' || op.ch == ']')
             {
-                op.precedence = 1;
+                op.precedence = 3;
                 equation_stack.push(op);
             }
             else if(op.ch == '*' || op.ch == '/' || op.ch == '%')
@@ -133,60 +134,111 @@ class conversion
                 
                 op.precedence = 2;
                 operatorPrecedence temp = new operatorPrecedence();
-                if(!equation_stack.empty())
+                if(equation_stack.empty())
                 {
-                  
-                    if(op.precedence > equation_stack.peek().precedence)
-                    {
-                         temp = equation_stack.pop();
-                         prefixString = prefixString+temp.ch;
-                    }
+                    equation_stack.push(op);
                 }
-                else if(equation_stack.empty())
+                else if(equation_stack.peek().ch == ')' || equation_stack.peek().ch == ']'|| equation_stack.peek().ch == '}')
                 {
-                equation_stack.push(op);
+                     equation_stack.push(op);              
+                }
+                else if(equation_stack.peek().precedence <= op.precedence)
+                {
+                    equation_stack.push(op);
+                }
+                else
+                {
+                    int flag = 0;
+                    while(flag == 0)
+                    {
+                        if(equation_stack.empty())
+                        {
+                            flag = 1;
+                            continue;
+                        }
+                        else if(equation_stack.peek().precedence > op.precedence)
+                        {
+                            temp = equation_stack.pop();
+                            sb.append(temp.ch);
+                        }
+                        else if(equation_stack.peek().precedence <= op.precedence)
+                        {
+                            flag = 1;
+                        }
+                    }
+                    equation_stack.push(op);
                 }
             }
             else if(op.ch == '+' || op.ch == '-')
             {
-                op.precedence = 3;
+                op.precedence = 1;
                 operatorPrecedence temp = new operatorPrecedence();
-                if(!equation_stack.empty())
+                if(equation_stack.empty())
                 {
-                    if(op.precedence > equation_stack.peek().precedence)
-                    {
-                         temp = equation_stack.pop();
-                         prefixString = prefixString+temp.ch;
-                    }
+                    equation_stack.push(op);
                 }
-                equation_stack.push(op);
+                else if(equation_stack.peek().ch == ')' || equation_stack.peek().ch == ']'|| equation_stack.peek().ch == '}')
+                {
+                     equation_stack.push(op);              
+                }
+                else if(equation_stack.peek().precedence <= op.precedence)
+                {
+                    equation_stack.push(op);
+                }
+                else
+                {
+                    int flag = 0;
+                    while(flag == 0)
+                    {
+                        if(equation_stack.empty())
+                        {
+                            flag = 1;
+                            continue;
+                        }
+                        
+                        else if(equation_stack.peek().precedence > op.precedence)
+                        {
+                            temp = equation_stack.pop();
+                            sb.append(temp.ch);
+                        }
+                        else if(equation_stack.peek().precedence <= op.precedence)
+                        {
+                            flag = 1;
+                        }
+                    }
+                    equation_stack.push(op);
+                }
             }
             else if(op.ch == '('|| op.ch == '{' || op.ch == '[')
             {
                 if(op.ch == '(')
                 {
                     operatorPrecedence op2 = new operatorPrecedence();
+                    op2.ch = ' ';
                     while(op2.ch != ')')
                     {
                         op2 = equation_stack.pop();
                         if(op2.ch == '*' || op2.ch == '/' || op2.ch == '%' || op2.ch == '+' || op2.ch == '-')
                         {
-                            prefixString = prefixString+op2.ch;
+                            sb.append(op2.ch);
                         }
                     }
+                    equation_stack.pop();
                 }
                 
                 if(op.ch == '{')
                 {
                     operatorPrecedence op2 = new operatorPrecedence();
+                    op2.ch = ' ';
                     while(op2.ch != '}')
                     {
                         op2 = equation_stack.pop();
                         if(op2.ch == '*' || op2.ch == '/' || op2.ch == '%' || op2.ch == '+' || op2.ch == '-')
                         {
-                            prefixString = prefixString+op2.ch;
+                            sb.append(op2.ch);
                         }
                     }
+                    equation_stack.pop();
                 }
             
                  if(op.ch == '[')
@@ -197,10 +249,11 @@ class conversion
                         op2 = equation_stack.pop();
                         if(op2.ch == '*' || op2.ch == '/' || op2.ch == '%' || op2.ch == '+' || op2.ch == '-')
                         {
-                            prefixString = prefixString+op2.ch;
+                            sb.append(op2.ch);
                         }
                     }
-                  }
+                 equation_stack.pop();
+                }
             }
             else if(op.ch == ' ')
             {
@@ -219,9 +272,17 @@ class conversion
 
             
         }
-        System.out.println(prefixString);
+        operatorPrecedence op2 = new operatorPrecedence();
+        while(!equation_stack.empty())
+        {
+            op2 = equation_stack.pop();
+            sb.append(op2.ch);
+        }
+        prefixString = sb.toString();
+        
         return prefixString;
-    }
+      }
+    
 }
 
 public class InfixtoPrefix extends Application {
@@ -232,11 +293,11 @@ public class InfixtoPrefix extends Application {
         Button btn = new Button();
         final TextField tf = new TextField();
         final Label l = new Label();
-        l.setText("HERES WHERE STRING GOES");
+        l.setText("Converted string will be here");
         tf.setText("");
         
         
-        btn.setText("Send String to Label");
+        btn.setText("Convert to prefix");
         btn.setOnAction(new EventHandler<ActionEvent>() {
             
             @Override
@@ -268,13 +329,17 @@ public class InfixtoPrefix extends Application {
         GridPane.setConstraints(tf,10,50);
         GridPane.setConstraints(l,10,10);
         grid.setPadding(new Insets(20,20,200,20)); 
+        grid.setMargin(l, new Insets(10,10,10,10));
+        grid.setMargin(tf, new Insets(10,10,10,10));
+        grid.setMargin(btn, new Insets(10,10,10,10));
         
         grid.getChildren().addAll(btn, tf, l);
         
         
-        Scene scene = new Scene(grid, 300, 250);
+        Scene scene = new Scene(grid, 700, 450);
+        scene.getStylesheets().add("infixCSS.css");
         
-        primaryStage.setTitle("What's on the menu?");
+        primaryStage.setTitle("Infix-to-Prefix Converter");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
